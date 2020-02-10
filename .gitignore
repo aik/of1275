@@ -1,0 +1,8 @@
+*.o
+*.a
+*.dep
+*.depend
+*.bin
+*.img
+*.elf
+*~
