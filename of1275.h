@@ -17,6 +17,9 @@ typedef unsigned int phandle;
 typedef int size_t;
 typedef void client(void);
 
+#define __stringify(x)	#x
+#define MYLOC(l)	("--line=" __stringify(l))
+
 /* globals */
 extern void _prom_entry(void); /* OF CI entry point (i.e. this firmware ) */
 typedef struct {
@@ -35,6 +38,8 @@ void *memcpy(void *dest, const void *src, size_t n);
 int memcmp(const void *ptr1, const void *ptr2, size_t n);
 void *memmove(void *dest, const void *src, size_t n);
 void *memset(void *dest, int c, size_t size);
+int snprintf(char *buf, int len, const char *fmt, ...);
+int printk(const char *fmt, ...);
 
 /* bswap */
 uint32_t le32_to_cpu(uint32_t x);
@@ -43,6 +48,8 @@ uint64_t le64_to_cpu(uint64_t x);
 /* Prom */
 typedef unsigned int prom_arg_t;
 int call_prom(const char *service, int nargs, int nret, ...);
+int call_prom_ret(const char *service, int nargs, int nret, prom_arg_t *rets,
+		...);
 
 /* CI wrappers */
 void ci_init(void);

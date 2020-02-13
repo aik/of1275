@@ -21,6 +21,25 @@ typedef struct {
     };
 } UUID;
 
+#if 0
+QemuUUID qemu_uuid_bswap(QemuUUID uuid)
+{
+	bswap32s(&uuid.fields.time_low);
+	bswap16s(&uuid.fields.time_mid);
+	bswap16s(&uuid.fields.time_high_and_version);
+	return uuid;
+}
+#endif
+
+void qemu_uuid_unparse_strdup(char *buf, const UUID *uuid)
+{
+	const unsigned char *uu = &uuid->data[0];
+	snprintf(buf, UUID_FMT_LEN + 1, UUID_FMT,
+			uu[0], uu[1], uu[2], uu[3], uu[4], uu[5], uu[6],
+			uu[7], uu[8], uu[9], uu[10], uu[11], uu[12],
+			uu[13], uu[14], uu[15]);
+}
+
 struct gpt_header {
 	char signature[8];
 	char revision[4];
@@ -60,9 +79,7 @@ static int find_prep_partition_on_gpt(ihandle blk, uint8_t *lba01,
 	unsigned i, partnum, partentrysize;
 	int ret;
 	struct gpt_header *hdr = (struct gpt_header *) (lba01 + SECTOR_SIZE);
-	UUID prep_uuid = { .fields =
-			{ 0x9e1a2d38, 0xc612, 0x4316, 0xaa, 0x26,
-			{ 0x8b, 0x49, 0x52, 0x1e, 0x5a, 0x8b} } };
+	const char *prep_uuid = "9e1a2d38-c612-4316-aa26-8b49521e5a8b";
 
 	if (memcmp(hdr, "EFI PART", 8))
 		return -1;
@@ -92,7 +109,8 @@ static int find_prep_partition_on_gpt(ihandle blk, uint8_t *lba01,
 		first = le64_to_cpu(entry->first_lba);
 		last = le64_to_cpu(entry->last_lba);
 
-		if (!memcmp(&parttype, &prep_uuid, sizeof(parttype))) {
+		qemu_uuid_unparse_strdup(uuid, &parttype);
+		if (!memcmp(uuid, prep_uuid, UUID_FMT_LEN)) {
 			*offset = first * SECTOR_SIZE;
 			*size = (last - first) * SECTOR_SIZE;
 		}
@@ -197,6 +215,8 @@ static void try_boot_block_device(ihandle blk, const char *path)
 	}
 
 	elf_size = elf_load_file(grub, &elf_addr, elf_pre_load, NULL);
+
+	printk("Booting from \"%s\"\n", path);
 
 	do_boot(elf_addr, 0, 0);
 }

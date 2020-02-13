@@ -102,8 +102,11 @@ elf_load_segments32(void *file_addr, signed long offset,
 	for (i = 0; i <= ehdr->e_phnum; i++) {
 		/* PT_LOAD ? */
 		if (phdr->p_type == 1) {
-			if (phdr->p_paddr != phdr->p_vaddr)
+			if (phdr->p_paddr != phdr->p_vaddr) {
+				printk("ELF32: VirtAddr(%lx) != PhysAddr(%lx) not supported, aborting\n",
+					(long)phdr->p_vaddr, (long)phdr->p_paddr);
 				return 0;
+			}
 
 			/* copy segment */
 			load_segment(file_addr, phdr, offset, pre_load,

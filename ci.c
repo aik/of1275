@@ -27,11 +27,16 @@ bool prom_handle(struct prom_args *pargs)
 		return false;
 
 	ci_getprop(of1275.rtas, "rtas-size", &rtassize, sizeof(rtassize));
-	if (rtassize < hv_rtas_size)
+	if (rtassize < hv_rtas_size) {
+		printk("Error: %d bytes not enough space for RTAS, need %d\n",
+				rtassize, hv_rtas_size);
 		return false;
+	}
 
 	rtasbase = (void *)(unsigned long) pargs->args[2];
 
+	printk("*** instantiate-rtas: %x..%x\n",
+			rtasbase, rtasbase + rtassize - 1);
 	memcpy(rtasbase, hv_rtas, hv_rtas_size);
 	pargs->args[pargs->nargs] = 0;
 	pargs->args[pargs->nargs + 1] = pargs->args[2];
@@ -69,6 +74,37 @@ int call_prom(const char *service, int nargs, int nret, ...)
         return (nret > 0) ? be32_to_cpu(args.args[nargs]) : 0;
 }
 
+#if 0
+int call_prom_ret(const char *service, int nargs, int nret, prom_arg_t *rets,
+		...)
+{
+        int i;
+        struct prom_args args;
+        va_list list;
+
+        args.service = cpu_to_be32(ADDR(service));
+        args.nargs = cpu_to_be32(nargs);
+        args.nret = cpu_to_be32(nret);
+
+        va_start(list, rets);
+        for (i = 0; i < nargs; i++)
+                args.args[i] = cpu_to_be32(va_arg(list, prom_arg_t));
+        va_end(list);
+
+        for (i = 0; i < nret; i++)
+                args.args[nargs+i] = 0;
+
+        if (ci_entry(CELL(&args)) < 0)
+                return PROM_ERROR;
+
+        if (rets != NULL)
+                for (i = 1; i < nret; ++i)
+                        rets[i-1] = be32_to_cpu(args.args[nargs+i]);
+
+        return (nret > 0) ? be32_to_cpu(args.args[nargs]) : 0;
+}
+#endif
+
 void ci_init(void)
 {
 	of1275.chosen = ci_finddevice("/chosen");
@@ -85,6 +121,7 @@ void ci_init(void)
 
 void ci_panic(const char *str)
 {
+	printk("Panic: %s\n", str);
 	call_prom("exit", 0, 0);
 }
 
