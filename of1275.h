@@ -2,6 +2,10 @@
 #include <stdint.h>
 #include "libelf.h"
 
+//typedef unsigned char uint8_t;
+//typedef unsigned short uint16_t;
+//typedef unsigned long uint32_t;
+//typedef unsigned long long uint64_t;
 #define NULL (0)
 #define PROM_ERROR (-1u)
 typedef unsigned int __be32;
@@ -32,6 +36,10 @@ int memcmp(const void *ptr1, const void *ptr2, size_t n);
 void *memmove(void *dest, const void *src, size_t n);
 void *memset(void *dest, int c, size_t size);
 
+/* bswap */
+uint32_t le32_to_cpu(uint32_t x);
+uint64_t le64_to_cpu(uint64_t x);
+
 /* Prom */
 typedef unsigned int prom_arg_t;
 int call_prom(const char *service, int nargs, int nret, ...);
@@ -52,9 +60,17 @@ void ci_stdoutn(const char *buf, int len);
 void *ci_claim(void *virt, uint32_t size, uint32_t align);
 uint32_t ci_release(void *virt, uint32_t size);
 
+/* ELF */
+static inline uint32_t load_elf(void *img, uint32_t *addr){ return 0; }
+
+/* booting from blockdev */
+void boot_block(void);
+
 /* booting from -kernel */
 void boot_from_memory(uint64_t initrd, uint64_t initrdsize);
 
+
+/////////////////////////////////////////////////////
 static inline uint16_t bswap_16 (uint16_t x)
 {
         return __builtin_bswap16(x);
@@ -92,3 +108,11 @@ static inline void bswap_64p (uint64_t *x)
 #define be16_to_cpu(x) (x)
 #define be32_to_cpu(x) (x)
 #define be64_to_cpu(x) (x)
+
+#define le16_to_cpu(x) bswap_16(x)
+#define le32_to_cpu(x) bswap_32(x)
+#define le64_to_cpu(x) bswap_64(x)
+
+#define cpu_to_le16(x) bswap_16(x)
+#define cpu_to_le32(x) bswap_32(x)
+#define cpu_to_le64(x) bswap_64(x)

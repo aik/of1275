@@ -23,4 +23,5 @@ void entry_c(void)
 	ci_init();
 	ci_stdout(hello);
 	boot_from_memory(initrd, initrdsize);
+	boot_block();
 }
